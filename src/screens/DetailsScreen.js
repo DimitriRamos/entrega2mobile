@@ -86,7 +86,11 @@ export default function DetailsScreen({ route }) {
         }".`
       );
     } catch (error) {
-      showAlert('Erro', 'Não foi possível salvar. Verifique sua conexão e o Firestore.');
+      console.error('Firestore (salvar):', error?.code, error?.message);
+      showAlert(
+        'Erro',
+        `Não foi possível salvar. Verifique sua conexão e o Firestore.\n(${error?.code || error?.message})`
+      );
     } finally {
       setSaving(false);
     }

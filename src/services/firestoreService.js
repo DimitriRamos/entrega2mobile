@@ -12,7 +12,6 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   setDoc,
   updateDoc,
@@ -37,7 +36,9 @@ export async function saveTrip(uid, country, { status, notes = '' }) {
   if (!uid) throw new Error('Usuário não autenticado.');
 
   const ref = doc(db, TRIPS, tripId(uid, country.cca3));
-  const existing = await getDoc(ref);
+  // Consulta filtrada por uid (permitida pelas regras) em vez de getDoc num documento
+  // que talvez ainda não exista: nesse caso as regras negariam a leitura.
+  const existing = await getTripByCountry(uid, country.cca3);
 
   const data = {
     uid,
@@ -51,7 +52,7 @@ export async function saveTrip(uid, country, { status, notes = '' }) {
     updatedAt: serverTimestamp(),
   };
 
-  if (!existing.exists()) {
+  if (!existing) {
     data.createdAt = serverTimestamp();
   }
 
@@ -71,8 +72,15 @@ export async function getUserTrips(uid) {
 
 /** READ: roteiro de um país específico (ou null) */
 export async function getTripByCountry(uid, countryCode) {
-  const snapshot = await getDoc(doc(db, TRIPS, tripId(uid, countryCode)));
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+  const q = query(
+    collection(db, TRIPS),
+    where('uid', '==', uid),
+    where('countryCode', '==', countryCode)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  const found = snapshot.docs[0];
+  return { id: found.id, ...found.data() };
 }
 
 /** UPDATE: altera apenas as notas */
