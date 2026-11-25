@@ -1,0 +1,162 @@
+// src/screens/HomeScreen.js
+// Dashboard: busca por texto + filtro de região + FlatList de países.
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import useCountries from '../hooks/useCountries';
+import CountryCard from '../components/CountryCard';
+import RegionFilter from '../components/RegionFilter';
+import LoadingIndicator from '../components/LoadingIndicator';
+import { colors } from '../theme';
+
+export default function HomeScreen({ navigation }) {
+  const [region, setRegion] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const { countries, loading, error } = useCountries(region, searchQuery, reloadKey);
+
+  const renderContent = () => {
+    if (loading) {
+      return <LoadingIndicator message="Buscando países..." />;
+    }
+
+    if (error) {
+      return (
+        <View style={styles.feedback}>
+          <Ionicons name="cloud-offline-outline" size={56} color={colors.danger} />
+          <Text style={styles.feedbackText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => setReloadKey((k) => k + 1)}>
+            <Ionicons name="refresh" size={18} color="#FFF" />
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={countries}
+        keyExtractor={(item) => item.cca3}
+        renderItem={({ item }) => (
+          <CountryCard
+            country={item}
+            onPress={() => navigation.navigate('Details', { country: item })}
+          />
+        )}
+        contentContainerStyle={countries.length === 0 ? styles.emptyList : styles.list}
+        ListHeaderComponent={
+          countries.length > 0 ? (
+            <Text style={styles.counter}>
+              {countries.length} {countries.length === 1 ? 'país encontrado' : 'países encontrados'}
+            </Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={styles.feedback}>
+            <Ionicons name="search-outline" size={56} color={colors.textMuted} />
+            <Text style={styles.feedbackText}>Nenhum país encontrado.</Text>
+          </View>
+        }
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        windowSize={10}
+      />
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={colors.textMuted} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar país (em inglês, ex.: Brazil)"
+          placeholderTextColor={colors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+        {!!searchQuery && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Limpar busca">
+            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View>
+        <RegionFilter selectedRegion={region} onSelectRegion={setRegion} />
+      </View>
+
+      <View style={styles.content}>{renderContent()}</View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    fontSize: 16,
+    color: colors.text,
+  },
+  content: { flex: 1 },
+  list: { paddingBottom: 24 },
+  emptyList: { flexGrow: 1 },
+  counter: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  feedback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  feedbackText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  retryText: {
+    color: '#FFF',
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+});
