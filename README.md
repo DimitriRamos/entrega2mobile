@@ -6,7 +6,7 @@ Aplicativo mobile em **React Native (Expo)** + **Firebase** para explorar paíse
 ## Stack
 - React Native + Expo (JavaScript), apenas componentes funcionais e Hooks
 - `@react-navigation/native` + `stack` + `drawer` (combinados)
-- Firebase v9+ Modular SDK (`firebase/auth` E-mail/Senha + `firebase/firestore`)
+- Firebase v9+ Modular SDK (`firebase/auth` E-mail/Senha + Google na web, `firebase/firestore`)
 - `@expo/vector-icons` (Ionicons)
 
 ## Estrutura

@@ -13,7 +13,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import { colors } from '../theme';
 
@@ -34,6 +39,9 @@ const ERROR_MESSAGES = {
     'Login por E-mail/senha desativado. Ative em Firebase > Authentication > Sign-in method.',
   'auth/configuration-not-found':
     'Authentication não configurado. No Firebase, abra Authentication, clique em "Vamos começar" e ative E-mail/senha.',
+  'auth/popup-blocked': 'O navegador bloqueou o popup do Google. Permita popups para este site.',
+  'auth/account-exists-with-different-credential':
+    'Este e-mail já está cadastrado com outro método de login.',
   'auth/unauthorized-domain':
     'Domínio não autorizado. Adicione-o em Firebase > Authentication > Configurações > Domínios autorizados.',
 };
@@ -78,6 +86,31 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Firebase Auth:', error?.code, error?.message);
       setErrorMessage(translateError(error));
+      setLoading(false);
+    }
+  };
+
+  // Login com Google: na web usa o popup do Firebase. No app nativo (Expo Go) seria
+  // necessário configurar expo-auth-session com Client IDs OAuth do Google Cloud.
+  const handleGoogleSignIn = async () => {
+    if (Platform.OS !== 'web') {
+      setErrorMessage('O login com Google está disponível na versão web. No celular, use e-mail e senha.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+      // Sucesso: o AppNavigator troca automaticamente para o Drawer
+    } catch (error) {
+      const cancelled = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request'];
+      if (!cancelled.includes(error?.code)) {
+        console.error('Firebase Auth (Google):', error?.code, error?.message);
+        setErrorMessage(translateError(error));
+      }
       setLoading(false);
     }
   };
@@ -172,6 +205,21 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+          >
+            <Ionicons name="logo-google" size={20} color="#DB4437" />
+            <Text style={styles.googleButtonText}>Continuar com Google</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={toggleMode} style={styles.switchButton} disabled={loading}>
             <Text style={styles.switchText}>
               {isRegister ? 'Já tem conta? ' : 'Não tem conta? '}
@@ -264,6 +312,37 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 13,
+    backgroundColor: colors.card,
+  },
+  googleButtonText: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
   },
   switchButton: {
     marginTop: 16,

@@ -130,8 +130,15 @@ export default function ProfileScreen() {
     <View>
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(user?.email?.[0] ?? '?').toUpperCase()}</Text>
+          {user?.photoURL ? (
+            <Image source={{ uri: user.photoURL }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>
+              {(user?.displayName?.[0] ?? user?.email?.[0] ?? '?').toUpperCase()}
+            </Text>
+          )}
         </View>
+        {!!user?.displayName && <Text style={styles.displayName}>{user.displayName}</Text>}
         <Text style={styles.email}>{user?.email}</Text>
         <Text style={styles.memberSince}>Membro desde {memberSince}</Text>
 
@@ -293,6 +300,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  displayName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: 12,
   },
   avatarText: {
     color: '#FFF',
