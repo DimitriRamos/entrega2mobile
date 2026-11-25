@@ -1,6 +1,6 @@
 // src/navigation/DrawerNavigator.js
 import React from 'react';
-import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
@@ -13,6 +13,7 @@ import { auth } from '../../firebaseConfig';
 import HomeStack from './HomeStack';
 import ProfileScreen from '../screens/ProfileScreen';
 import { colors } from '../theme';
+import { showAlert, confirmAction } from '../utils/alerts';
 
 const Drawer = createDrawerNavigator();
 
@@ -23,19 +24,12 @@ function CustomDrawerContent(props) {
     try {
       await signOut(auth); // AppNavigator detecta a mudança e volta ao Login
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível sair. Tente novamente.');
+      showAlert('Erro', 'Não foi possível sair. Tente novamente.');
     }
   };
 
   const handleSignOut = () => {
-    if (Platform.OS === 'web') {
-      doSignOut();
-      return;
-    }
-    Alert.alert('Sair', 'Deseja realmente sair da sua conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: doSignOut },
-    ]);
+    confirmAction('Sair', 'Deseja realmente sair da sua conta?', doSignOut, 'Sair');
   };
 
   return (

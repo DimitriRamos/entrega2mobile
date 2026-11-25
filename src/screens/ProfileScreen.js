@@ -12,8 +12,6 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Alert,
-  Platform,
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,22 +26,12 @@ import {
 } from '../services/firestoreService';
 import LoadingIndicator from '../components/LoadingIndicator';
 import { colors } from '../theme';
+import { showAlert, confirmAction } from '../utils/alerts';
 
 const TABS = [
   { value: TRIP_STATUS.WANT, label: 'Quero Visitar', icon: 'airplane-outline', color: colors.warning },
   { value: TRIP_STATUS.VISITED, label: 'Visitados', icon: 'checkmark-done-outline', color: colors.accent },
 ];
-
-function confirmAction(title, message, onConfirm) {
-  if (Platform.OS === 'web') {
-    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: 'Confirmar', style: 'destructive', onPress: onConfirm },
-  ]);
-}
 
 export default function ProfileScreen() {
   const user = auth.currentUser;
@@ -91,9 +79,9 @@ export default function ProfileScreen() {
         await deleteTrip(trip.id);
         setTrips((prev) => prev.filter((t) => t.id !== trip.id));
       } catch (err) {
-        Alert.alert('Erro', 'Não foi possível excluir.');
+        showAlert('Erro', 'Não foi possível excluir.');
       }
-    });
+    }, 'Excluir');
   };
 
   const handleToggleStatus = async (trip) => {
@@ -103,7 +91,7 @@ export default function ProfileScreen() {
       await updateTripStatus(trip.id, newStatus);
       setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, status: newStatus } : t)));
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível alterar o status.');
+      showAlert('Erro', 'Não foi possível alterar o status.');
     }
   };
 
@@ -121,7 +109,7 @@ export default function ProfileScreen() {
       );
       setEditingTrip(null);
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar as notas.');
+      showAlert('Erro', 'Não foi possível salvar as notas.');
     } finally {
       setSavingNotes(false);
     }

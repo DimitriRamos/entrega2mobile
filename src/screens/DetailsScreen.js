@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -23,6 +22,7 @@ import {
   TRIP_STATUS,
 } from '../services/firestoreService';
 import { colors } from '../theme';
+import { showAlert, confirmAction } from '../utils/alerts';
 
 function InfoRow({ icon, label, value }) {
   return (
@@ -79,14 +79,14 @@ export default function DetailsScreen({ route }) {
     try {
       await saveTrip(uid, country, { status, notes });
       setSavedTrip({ status, notes });
-      Alert.alert(
+      showAlert(
         'Salvo!',
         `${country.name.common} foi salvo em "${
           status === TRIP_STATUS.WANT ? 'Quero Visitar' : 'Visitados'
         }".`
       );
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar. Verifique sua conexão e o Firestore.');
+      showAlert('Erro', 'Não foi possível salvar. Verifique sua conexão e o Firestore.');
     } finally {
       setSaving(false);
     }
@@ -100,21 +100,19 @@ export default function DetailsScreen({ route }) {
       setStatus(TRIP_STATUS.WANT);
       setNotes('');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível remover.');
+      showAlert('Erro', 'Não foi possível remover.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleRemove = () => {
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Remover ${country.name.common} dos seus roteiros?`)) removeTrip();
-      return;
-    }
-    Alert.alert('Remover', `Remover ${country.name.common} dos seus roteiros?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: removeTrip },
-    ]);
+    confirmAction(
+      'Remover',
+      `Remover ${country.name.common} dos seus roteiros?`,
+      removeTrip,
+      'Remover'
+    );
   };
 
   // Formatação dos dados da API
