@@ -28,11 +28,19 @@ const ERROR_MESSAGES = {
   'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
   'auth/network-request-failed': 'Falha de conexão. Verifique sua internet.',
   'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
-    'Firebase não configurado: preencha as credenciais em firebaseConfig.js.',
+    'API Key inválida: confira as credenciais em firebaseConfig.js.',
+  'auth/invalid-api-key': 'API Key inválida: confira as credenciais em firebaseConfig.js.',
+  'auth/operation-not-allowed':
+    'Login por E-mail/senha desativado. Ative em Firebase > Authentication > Sign-in method.',
+  'auth/configuration-not-found':
+    'Authentication não configurado. No Firebase, abra Authentication, clique em "Vamos começar" e ative E-mail/senha.',
+  'auth/unauthorized-domain':
+    'Domínio não autorizado. Adicione-o em Firebase > Authentication > Configurações > Domínios autorizados.',
 };
 
 const translateError = (error) =>
-  ERROR_MESSAGES[error?.code] ?? 'Não foi possível concluir. Tente novamente.';
+  ERROR_MESSAGES[error?.code] ??
+  `Não foi possível concluir (${error?.code || error?.message || 'erro desconhecido'}).`;
 
 export default function LoginScreen() {
   const [isRegister, setIsRegister] = useState(false);
@@ -68,6 +76,7 @@ export default function LoginScreen() {
       }
       // Sucesso: o AppNavigator (useAuth) troca automaticamente para o Drawer
     } catch (error) {
+      console.error('Firebase Auth:', error?.code, error?.message);
       setErrorMessage(translateError(error));
       setLoading(false);
     }
