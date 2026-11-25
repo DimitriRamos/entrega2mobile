@@ -17,7 +17,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Navigator screenOptions={{ headerShown: false, cardStyle: { flex: 1 } }}>
       {user ? (
         <RootStack.Screen name="Main" component={DrawerNavigator} />
       ) : (

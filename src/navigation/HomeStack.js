@@ -15,6 +15,9 @@ export default function HomeStack() {
   return (
     <Stack.Navigator
       screenOptions={{
+        // Na web o Stack não limita a altura da tela à janela, e as listas não rolam.
+        // flex: 1 faz cada tela ocupar exatamente a área visível.
+        cardStyle: { flex: 1 },
         headerStyle: { backgroundColor: colors.primary },
         headerTintColor: '#FFF',
         headerTitleStyle: { fontWeight: '700' },
