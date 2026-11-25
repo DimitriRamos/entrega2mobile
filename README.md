@@ -42,6 +42,8 @@ Todos com `?fields=name,flags,capital,region,subregion,population,languages,curr
 - Por nome: `https://restcountries.com/v3.1/name/{nome}`
 - Por código: `https://restcountries.com/v3.1/alpha/{cca3}`
 
+Se a API oficial falhar, o app usa automaticamente o espelho `https://studies.cs.helsinki.fi/restcountries/api/all` (mesmo formato v3.1) e filtra os dados localmente.
+
 ## Firestore - coleção `trips`
 Documento com id `{uid}_{cca3}` (evita duplicar o mesmo país para o mesmo usuário):
 
