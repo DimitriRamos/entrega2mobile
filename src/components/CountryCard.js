@@ -4,11 +4,15 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
-export default function CountryCard({ country, onPress }) {
+export default function CountryCard({ country, onPress, grid = false }) {
   const capital = country.capital?.length ? country.capital.join(', ') : 'Sem capital';
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={[styles.card, grid && styles.cardGrid]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <Image
         source={{ uri: country.flags?.png }}
         style={styles.flag}
@@ -53,6 +57,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  // Na grade (tablet/navegador) o espaçamento vem da célula da FlatList
+  cardGrid: {
+    flex: 1,
+    marginHorizontal: 0,
+    marginVertical: 0,
   },
   flag: {
     width: 72,

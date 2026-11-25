@@ -238,6 +238,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
   },
   logoContainer: {
     alignItems: 'center',
@@ -282,6 +285,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0, // na web o input não encolhe sem isso
     paddingVertical: 12,
     paddingHorizontal: 8,
     fontSize: 16,

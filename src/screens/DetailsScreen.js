@@ -15,14 +15,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../firebaseConfig';
-import {
-  saveTrip,
-  getTripByCountry,
-  deleteTrip,
-  TRIP_STATUS,
-} from '../services/firestoreService';
+import { saveTrip, getTripByCountry, deleteTrip, TRIP_STATUS } from '../services/firestoreService';
 import { colors } from '../theme';
 import { showAlert, confirmAction } from '../utils/alerts';
+import useResponsive from '../hooks/useResponsive';
 
 function InfoRow({ icon, label, value }) {
   return (
@@ -39,6 +35,7 @@ function InfoRow({ icon, label, value }) {
 export default function DetailsScreen({ route }) {
   const { country } = route.params;
   const uid = auth.currentUser?.uid;
+  const { isDesktop, isTablet } = useResponsive();
 
   const [status, setStatus] = useState(TRIP_STATUS.WANT);
   const [notes, setNotes] = useState('');
@@ -83,13 +80,13 @@ export default function DetailsScreen({ route }) {
         'Salvo!',
         `${country.name.common} foi salvo em "${
           status === TRIP_STATUS.WANT ? 'Quero Visitar' : 'Visitados'
-        }".`
+        }".`,
       );
     } catch (error) {
       console.error('Firestore (salvar):', error?.code, error?.message);
       showAlert(
         'Erro',
-        `Não foi possível salvar. Verifique sua conexão e o Firestore.\n(${error?.code || error?.message})`
+        `Não foi possível salvar. Verifique sua conexão e o Firestore.\n(${error?.code || error?.message})`,
       );
     } finally {
       setSaving(false);
@@ -115,7 +112,7 @@ export default function DetailsScreen({ route }) {
       'Remover',
       `Remover ${country.name.common} dos seus roteiros?`,
       removeTrip,
-      'Remover'
+      'Remover',
     );
   };
 
@@ -136,10 +133,10 @@ export default function DetailsScreen({ route }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         <Image
           source={{ uri: country.flags?.png }}
-          style={styles.flag}
+          style={[styles.flag, isTablet && styles.flagLarge]}
           resizeMode="contain"
           accessibilityLabel={country.flags?.alt || `Bandeira de ${country.name.common}`}
         />
@@ -152,117 +149,120 @@ export default function DetailsScreen({ route }) {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informações gerais</Text>
-          <InfoRow icon="business-outline" label="Capital" value={capital} />
-          <InfoRow icon="globe-outline" label="Região" value={country.region || 'N/D'} />
-          <InfoRow icon="map-outline" label="Sub-região" value={country.subregion || 'N/D'} />
-          <InfoRow icon="people-outline" label="População" value={population} />
-          <InfoRow icon="chatbubbles-outline" label="Idiomas" value={languages} />
-          <InfoRow icon="cash-outline" label="Moedas" value={currencies} />
-          <InfoRow icon="time-outline" label="Fusos horários" value={timezones} />
-        </View>
+        <View style={[styles.columns, isDesktop && styles.columnsRow]}>
+          <View style={[styles.section, isDesktop && styles.sectionColumn]}>
+            <Text style={styles.sectionTitle}>Informações gerais</Text>
+            <InfoRow icon="business-outline" label="Capital" value={capital} />
+            <InfoRow icon="globe-outline" label="Região" value={country.region || 'N/D'} />
+            <InfoRow icon="map-outline" label="Sub-região" value={country.subregion || 'N/D'} />
+            <InfoRow icon="people-outline" label="População" value={population} />
+            <InfoRow icon="chatbubbles-outline" label="Idiomas" value={languages} />
+            <InfoRow icon="cash-outline" label="Moedas" value={currencies} />
+            <InfoRow icon="time-outline" label="Fusos horários" value={timezones} />
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Meu roteiro</Text>
+          <View style={[styles.section, isDesktop && styles.sectionColumn]}>
+            <Text style={styles.sectionTitle}>Meu roteiro</Text>
 
-          {loadingTrip ? (
-            <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
-          ) : (
-            <>
-              {savedTrip && (
-                <View style={styles.savedBadge}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
-                  <Text style={styles.savedText}>
-                    Salvo em "{savedTrip.status === TRIP_STATUS.WANT ? 'Quero Visitar' : 'Visitados'}"
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.statusRow}>
-                <TouchableOpacity
-                  style={[styles.statusButton, status === TRIP_STATUS.WANT && styles.statusWant]}
-                  onPress={() => setStatus(TRIP_STATUS.WANT)}
-                >
-                  <Ionicons
-                    name="airplane-outline"
-                    size={18}
-                    color={status === TRIP_STATUS.WANT ? '#FFF' : colors.warning}
-                  />
-                  <Text
-                    style={[
-                      styles.statusText,
-                      status === TRIP_STATUS.WANT && styles.statusTextActive,
-                    ]}
-                  >
-                    Quero Visitar
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    status === TRIP_STATUS.VISITED && styles.statusVisited,
-                  ]}
-                  onPress={() => setStatus(TRIP_STATUS.VISITED)}
-                >
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={18}
-                    color={status === TRIP_STATUS.VISITED ? '#FFF' : colors.accent}
-                  />
-                  <Text
-                    style={[
-                      styles.statusText,
-                      status === TRIP_STATUS.VISITED && styles.statusTextActive,
-                    ]}
-                  >
-                    Visitado
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <TextInput
-                style={styles.notesInput}
-                placeholder="Notas: pontos turísticos, datas, dicas..."
-                placeholderTextColor={colors.textMuted}
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-                maxLength={500}
-                textAlignVertical="top"
-              />
-              <Text style={styles.charCount}>{notes.length}/500</Text>
-
-              <TouchableOpacity
-                style={[styles.saveButton, saving && { opacity: 0.7 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <>
-                    <Ionicons name="save-outline" size={20} color="#FFF" />
-                    <Text style={styles.saveText}>
-                      {savedTrip ? 'Atualizar roteiro' : 'Salvar no roteiro'}
+            {loadingTrip ? (
+              <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
+            ) : (
+              <>
+                {savedTrip && (
+                  <View style={styles.savedBadge}>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+                    <Text style={styles.savedText}>
+                      Salvo em "
+                      {savedTrip.status === TRIP_STATUS.WANT ? 'Quero Visitar' : 'Visitados'}"
                     </Text>
-                  </>
+                  </View>
                 )}
-              </TouchableOpacity>
 
-              {savedTrip && (
+                <View style={styles.statusRow}>
+                  <TouchableOpacity
+                    style={[styles.statusButton, status === TRIP_STATUS.WANT && styles.statusWant]}
+                    onPress={() => setStatus(TRIP_STATUS.WANT)}
+                  >
+                    <Ionicons
+                      name="airplane-outline"
+                      size={18}
+                      color={status === TRIP_STATUS.WANT ? '#FFF' : colors.warning}
+                    />
+                    <Text
+                      style={[
+                        styles.statusText,
+                        status === TRIP_STATUS.WANT && styles.statusTextActive,
+                      ]}
+                    >
+                      Quero Visitar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.statusButton,
+                      status === TRIP_STATUS.VISITED && styles.statusVisited,
+                    ]}
+                    onPress={() => setStatus(TRIP_STATUS.VISITED)}
+                  >
+                    <Ionicons
+                      name="checkmark-done-outline"
+                      size={18}
+                      color={status === TRIP_STATUS.VISITED ? '#FFF' : colors.accent}
+                    />
+                    <Text
+                      style={[
+                        styles.statusText,
+                        status === TRIP_STATUS.VISITED && styles.statusTextActive,
+                      ]}
+                    >
+                      Visitado
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TextInput
+                  style={styles.notesInput}
+                  placeholder="Notas: pontos turísticos, datas, dicas..."
+                  placeholderTextColor={colors.textMuted}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  maxLength={500}
+                  textAlignVertical="top"
+                />
+                <Text style={styles.charCount}>{notes.length}/500</Text>
+
                 <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={handleRemove}
+                  style={[styles.saveButton, saving && { opacity: 0.7 }]}
+                  onPress={handleSave}
                   disabled={saving}
                 >
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  <Text style={styles.removeText}>Remover dos roteiros</Text>
+                  {saving ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="save-outline" size={20} color="#FFF" />
+                      <Text style={styles.saveText}>
+                        {savedTrip ? 'Atualizar roteiro' : 'Salvar no roteiro'}
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
-              )}
-            </>
-          )}
+
+                {savedTrip && (
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={handleRemove}
+                    disabled={saving}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                    <Text style={styles.removeText}>Remover dos roteiros</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -274,10 +274,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  // Centraliza e limita a largura em tablets e no navegador
+  scrollContent: {
+    paddingBottom: 32,
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
+  },
   flag: {
     width: '100%',
     height: 200,
     backgroundColor: colors.card,
+  },
+  flagLarge: {
+    height: 260,
+  },
+  columns: {},
+  // Navegador/tela larga: informações e roteiro lado a lado
+  columnsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 8,
+  },
+  sectionColumn: {
+    flex: 1,
+    marginHorizontal: 8,
   },
   header: {
     alignItems: 'center',

@@ -27,14 +27,27 @@ import {
 import LoadingIndicator from '../components/LoadingIndicator';
 import { colors } from '../theme';
 import { showAlert, confirmAction } from '../utils/alerts';
+import useResponsive from '../hooks/useResponsive';
 
 const TABS = [
-  { value: TRIP_STATUS.WANT, label: 'Quero Visitar', icon: 'airplane-outline', color: colors.warning },
-  { value: TRIP_STATUS.VISITED, label: 'Visitados', icon: 'checkmark-done-outline', color: colors.accent },
+  {
+    value: TRIP_STATUS.WANT,
+    label: 'Quero Visitar',
+    icon: 'airplane-outline',
+    color: colors.warning,
+  },
+  {
+    value: TRIP_STATUS.VISITED,
+    label: 'Visitados',
+    icon: 'checkmark-done-outline',
+    color: colors.accent,
+  },
 ];
 
 export default function ProfileScreen() {
   const user = auth.currentUser;
+  const { isDesktop } = useResponsive();
+  const tripColumns = isDesktop ? 2 : 1;
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +78,7 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       loadTrips();
-    }, [loadTrips])
+    }, [loadTrips]),
   );
 
   const handleRefresh = () => {
@@ -74,19 +87,23 @@ export default function ProfileScreen() {
   };
 
   const handleDelete = (trip) => {
-    confirmAction('Excluir', `Remover ${trip.countryName} dos seus roteiros?`, async () => {
-      try {
-        await deleteTrip(trip.id);
-        setTrips((prev) => prev.filter((t) => t.id !== trip.id));
-      } catch (err) {
-        showAlert('Erro', 'Não foi possível excluir.');
-      }
-    }, 'Excluir');
+    confirmAction(
+      'Excluir',
+      `Remover ${trip.countryName} dos seus roteiros?`,
+      async () => {
+        try {
+          await deleteTrip(trip.id);
+          setTrips((prev) => prev.filter((t) => t.id !== trip.id));
+        } catch (err) {
+          showAlert('Erro', 'Não foi possível excluir.');
+        }
+      },
+      'Excluir',
+    );
   };
 
   const handleToggleStatus = async (trip) => {
-    const newStatus =
-      trip.status === TRIP_STATUS.WANT ? TRIP_STATUS.VISITED : TRIP_STATUS.WANT;
+    const newStatus = trip.status === TRIP_STATUS.WANT ? TRIP_STATUS.VISITED : TRIP_STATUS.WANT;
     try {
       await updateTripStatus(trip.id, newStatus);
       setTrips((prev) => prev.map((t) => (t.id === trip.id ? { ...t, status: newStatus } : t)));
@@ -105,7 +122,7 @@ export default function ProfileScreen() {
     try {
       await updateTripNotes(editingTrip.id, editNotes);
       setTrips((prev) =>
-        prev.map((t) => (t.id === editingTrip.id ? { ...t, notes: editNotes.trim() } : t))
+        prev.map((t) => (t.id === editingTrip.id ? { ...t, notes: editNotes.trim() } : t)),
       );
       setEditingTrip(null);
     } catch (err) {
@@ -178,7 +195,7 @@ export default function ProfileScreen() {
   );
 
   const renderTrip = ({ item }) => (
-    <View style={styles.tripCard}>
+    <View style={[styles.tripCard, tripColumns > 1 && styles.tripCardGrid]}>
       <View style={styles.tripHeader}>
         {!!item.flagUrl && <Image source={{ uri: item.flagUrl }} style={styles.tripFlag} />}
         <View style={{ flex: 1 }}>
@@ -217,6 +234,8 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+        key={`trips-${tripColumns}`}
+        numColumns={tripColumns}
         data={filteredTrips}
         keyExtractor={(item) => item.id}
         renderItem={renderTrip}
@@ -230,7 +249,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
         }
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
 
@@ -285,6 +304,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  // Centraliza e limita a largura em tablets e no navegador
+  listContent: {
+    paddingBottom: 32,
+    width: '100%',
+    maxWidth: 1000,
+    alignSelf: 'center',
+  },
+  tripCardGrid: {
+    flex: 1,
+    maxWidth: '47%',
   },
   profileCard: {
     backgroundColor: colors.card,
@@ -453,6 +483,9 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
     backgroundColor: colors.card,
     borderRadius: 16,
     padding: 20,
